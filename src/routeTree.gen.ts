@@ -10,68 +10,35 @@
 
 import { createFileRoute } from '@tanstack/react-router'
 
-// Import Routes
+import { Route as rootRouteImport } from './routes/__root'
 
-import { Route as rootRoute } from './routes/__root'
+const IndexLazyRouteImport = createFileRoute('/')()
+const NoteNoteIdLazyRouteImport = createFileRoute('/note/$noteId')()
 
-// Create Virtual Routes
-
-const IndexLazyImport = createFileRoute('/')()
-const NoteNoteIdLazyImport = createFileRoute('/note/$noteId')()
-
-// Create/Update Routes
-
-const IndexLazyRoute = IndexLazyImport.update({
+const IndexLazyRoute = IndexLazyRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => rootRouteImport,
 } as any).lazy(() => import('./routes/index.lazy').then((d) => d.Route))
-
-const NoteNoteIdLazyRoute = NoteNoteIdLazyImport.update({
+const NoteNoteIdLazyRoute = NoteNoteIdLazyRouteImport.update({
   id: '/note/$noteId',
   path: '/note/$noteId',
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => rootRouteImport,
 } as any).lazy(() => import('./routes/note.$noteId.lazy').then((d) => d.Route))
-
-// Populate the FileRoutesByPath interface
-
-declare module '@tanstack/react-router' {
-  interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexLazyImport
-      parentRoute: typeof rootRoute
-    }
-    '/note/$noteId': {
-      id: '/note/$noteId'
-      path: '/note/$noteId'
-      fullPath: '/note/$noteId'
-      preLoaderRoute: typeof NoteNoteIdLazyImport
-      parentRoute: typeof rootRoute
-    }
-  }
-}
-
-// Create and export the route tree
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexLazyRoute
   '/note/$noteId': typeof NoteNoteIdLazyRoute
 }
-
 export interface FileRoutesByTo {
   '/': typeof IndexLazyRoute
   '/note/$noteId': typeof NoteNoteIdLazyRoute
 }
-
 export interface FileRoutesById {
-  __root__: typeof rootRoute
+  __root__: typeof rootRouteImport
   '/': typeof IndexLazyRoute
   '/note/$noteId': typeof NoteNoteIdLazyRoute
 }
-
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths: '/' | '/note/$noteId'
@@ -80,37 +47,34 @@ export interface FileRouteTypes {
   id: '__root__' | '/' | '/note/$noteId'
   fileRoutesById: FileRoutesById
 }
-
 export interface RootRouteChildren {
   IndexLazyRoute: typeof IndexLazyRoute
   NoteNoteIdLazyRoute: typeof NoteNoteIdLazyRoute
+}
+
+declare module '@tanstack/react-router' {
+  interface FileRoutesByPath {
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexLazyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/note/$noteId': {
+      id: '/note/$noteId'
+      path: '/note/$noteId'
+      fullPath: '/note/$noteId'
+      preLoaderRoute: typeof NoteNoteIdLazyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+  }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexLazyRoute: IndexLazyRoute,
   NoteNoteIdLazyRoute: NoteNoteIdLazyRoute,
 }
-
-export const routeTree = rootRoute
+export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-/* ROUTE_MANIFEST_START
-{
-  "routes": {
-    "__root__": {
-      "filePath": "__root.tsx",
-      "children": [
-        "/",
-        "/note/$noteId"
-      ]
-    },
-    "/": {
-      "filePath": "index.lazy.tsx"
-    },
-    "/note/$noteId": {
-      "filePath": "note.$noteId.lazy.tsx"
-    }
-  }
-}
-ROUTE_MANIFEST_END */
