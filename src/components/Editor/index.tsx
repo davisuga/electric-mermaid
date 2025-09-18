@@ -1,13 +1,12 @@
-import React, { useEffect } from "react";
-import { useEditor, EditorContent } from "@tiptap/react";
+import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "@tanstack/react-router";
 import * as Y from "yjs";
-import { createTiptapExtensions } from "../../lib/tiptap";
 import { TitleInput } from "./TitleInput";
+import { MermaidTextEditor } from "./MermaidTextEditor";
+import { MermaidRenderer } from "./MermaidRenderer";
 import { Awareness } from "y-protocols/awareness";
 import { ElectricProvider } from "../../y-electric";
 // import { ConservativeAwarenessCleanup } from "../../y-electric/awareness-cleanup"
-import * as random from "lib0/random";
 import { useNotes, updateNote } from "../../lib/notes";
 import "./editor.css";
 
@@ -50,9 +49,17 @@ function ActualEditor({ noteId }: { noteId: string }) {
   console.log({ noteId });
   const eProvider = getProvider(noteId);
   const { notes, isLoading } = useNotes();
+  const [mermaidContent, setMermaidContent] = useState('');
   console.log({ eProvider });
 
-  const note = notes.find((note) => note.id === parseInt(noteId, 10));
+  // Mock note data for demo purposes when backend is not available
+  const mockNote = {
+    id: parseInt(noteId, 10),
+    title: 'Mermaid Diagram Demo',
+    error: null
+  };
+
+  const note = notes.find((note) => note.id === parseInt(noteId, 10)) || mockNote;
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newTitle = e.target.value;
@@ -60,31 +67,36 @@ function ActualEditor({ noteId }: { noteId: string }) {
     updateNote(parseInt(noteId, 10), { title: newTitle }).catch(console.error);
   };
 
-  const handleContentChange = () => {
-    console.log(`handleContentChange`);
+  const handleContentChange = (content: string) => {
+    console.log(`handleContentChange with content length: ${content.length}`);
+    setMermaidContent(content);
   };
 
-  const editor = useEditor({
-    // enableContentCheck: true,
-    extensions: createTiptapExtensions(eProvider),
-  });
+  // For demo purposes, show the editor even if loading/no backend
+  const showEditor = true;
 
-  if (isLoading || !note) {
-    return ``;
+  if (!showEditor) {
+    return <div className="flex-1 flex items-center justify-center text-gray-500">Loading...</div>;
   }
 
   return (
-    <div className="flex-1 flex flex-col ml-10 lg:ml-0 border-l lg:border-0 border-grey bg-white">
+    <div className="flex-1 flex flex-col bg-white">
       <TitleInput
         title={note.title}
         onChange={handleTitleChange}
         error={note.error}
       />
-      <EditorContent
-        editor={editor}
-        className="flex-1 prose max-w-none p-4"
-        onChange={handleContentChange}
-      />
+      <div className="flex-1 flex">
+        <div className="w-1/2 border-r border-gray-200">
+          <MermaidTextEditor
+            provider={eProvider}
+            onContentChange={handleContentChange}
+          />
+        </div>
+        <div className="w-1/2">
+          <MermaidRenderer content={mermaidContent} />
+        </div>
+      </div>
     </div>
   );
 }
@@ -95,7 +107,7 @@ export default function Editor() {
 
   useEffect(() => {
     router.invalidate();
-  }, [noteId]);
+  }, [noteId, router]);
 
   return (
     <div className="flex-1 flex flex-col h-screen bg-gray-50">
